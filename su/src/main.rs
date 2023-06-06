@@ -1,4 +1,4 @@
-use std::{ffi::OsString, path::PathBuf, process, sync::atomic::Ordering};
+use std::{ffi::OsString, path::PathBuf, process, sync::atomic::Ordering, env};
 
 use sudo_common::{error::Error, Environment};
 use sudo_exec::{ExitReason, RunOptions};
@@ -14,6 +14,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 struct SuContext {
     command: PathBuf,
+    arguments: Vec<String>,
     options: SuOptions,
     environment: Environment,
     user: User,
@@ -25,18 +26,37 @@ impl SuContext {
     fn from_env(options: SuOptions) -> Result<SuContext, Error> {
         let process = sudo_system::Process::new();
 
-        let environment = Environment::default();
-        let user = User::from_name(&options.user)?
+        let mut environment = Environment::default();
+        for name in options.whitelist_environment.iter() {
+            if let Some(value) = env::var_os(name) {
+                environment.insert(name.into(), value);
+            }
+        }
+
+        let mut user = User::from_name(&options.user)?
             .ok_or_else(|| Error::UserNotFound(options.user.clone()))?;
+
+        let is_root = User::effective_uid() == 0;
 
         let group = match (&options.group, &options.supp_group) {
             (Some(group), _) | (_, Some(group)) => {
-                Group::from_name(group)?.ok_or_else(|| Error::GroupNotFound(group.to_owned()))
+                if is_root {
+                    Group::from_name(group)?.ok_or_else(|| Error::GroupNotFound(group.to_owned()))
+                } else {
+                    Err(Error::Options("setting a group is only allowed for root".to_owned()))
+                }
             }
             _ => {
                 Group::from_gid(user.gid)?.ok_or_else(|| Error::GroupNotFound(user.gid.to_string()))
             }
         }?;
+
+        if let Some(group_name) = &options.supp_group {
+            if is_root {
+                let supp_group = Group::from_name(group_name)?.ok_or_else(|| Error::GroupNotFound(group_name.to_owned()))?;
+                user.groups.push(supp_group.gid);
+            }
+        }
 
         // the shell specified with --shell
         // the shell specified in the environment variable SHELL, if the --preserve-environment option is used
@@ -48,8 +68,25 @@ impl SuContext {
             .or_else(|| environment.get(&OsString::from("SHELL")).map(|v| v.into()))
             .unwrap_or(user.home.clone());
 
+        let arguments = if let Some(command) = &options.command {
+            vec!["-c".to_owned(), command.to_owned()]
+        } else {
+            options.arguments.clone()
+        };
+
+        if options.login {
+            environment.insert("HOME".into(), user.home.clone().into_os_string());
+            environment.insert("SHELL".into(), command.clone().into());
+
+            if options.user == "root" {
+                environment.insert("USER".into(), options.user.clone().into());
+                environment.insert("LOGNAME".into(), options.user.clone().into());
+            }
+        }
+
         Ok(SuContext {
             command,
+            arguments,
             options,
             environment,
             user,
@@ -65,7 +102,7 @@ impl RunOptions for SuContext {
     }
 
     fn arguments(&self) -> &Vec<String> {
-        &self.options.arguments
+        &self.arguments
     }
 
     fn chdir(&self) -> Option<&std::path::PathBuf> {
@@ -174,7 +211,7 @@ fn main() {
             std::process::exit(0);
         }
         SuAction::Version => {
-            eprintln!("sudo-rs {VERSION}");
+            eprintln!("su-rs {VERSION}");
             std::process::exit(0);
         }
         SuAction::Run => {
