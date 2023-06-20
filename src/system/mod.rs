@@ -168,7 +168,7 @@ pub fn hostname() -> String {
 }
 
 pub fn syslog(priority: libc::c_int, facility: libc::c_int, message: &str) {
-    const MSG: *const libc::c_char = match CStr::from_bytes_until_nul(b"%s\0") {
+    let fmt: *const libc::c_char = match CStr::from_bytes_with_nul(b"%s\0") {
         Ok(cstr) => cstr.as_ptr(),
         Err(_) => panic!("syslog formatting string is not null-terminated"),
     };
@@ -176,7 +176,7 @@ pub fn syslog(priority: libc::c_int, facility: libc::c_int, message: &str) {
     let msg = CString::new(message).expect("message should not have interior null bytes");
 
     unsafe {
-        libc::syslog(priority | facility, MSG, msg.as_ptr());
+        libc::syslog(priority | facility, fmt, msg.as_ptr());
     }
 }
 
@@ -794,7 +794,7 @@ mod tests {
 
     fn is_closed<F: AsRawFd>(fd: &F) -> bool {
         crate::cutils::cerr(unsafe { libc::fcntl(fd.as_raw_fd(), libc::F_GETFD) })
-            .is_err_and(|err| err.raw_os_error() == Some(libc::EBADF))
+            .err().map(|err| err.raw_os_error() == Some(libc::EBADF)).unwrap_or(false)
     }
 
     #[test]

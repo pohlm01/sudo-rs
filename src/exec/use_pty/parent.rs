@@ -93,7 +93,7 @@ pub(in crate::exec) fn exec_pty(
     // Check if we are the foreground process
     let mut foreground = user_tty
         .tcgetpgrp()
-        .is_ok_and(|tty_pgrp| tty_pgrp == parent_pgrp);
+        .map(|tty_pgrp| tty_pgrp == parent_pgrp).unwrap_or(false);
     dev_info!(
         "sudo is runnning in the {}",
         cond_fmt(foreground, "foreground", "background")

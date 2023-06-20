@@ -5,8 +5,8 @@ use std::{
         fd::{AsRawFd, RawFd},
         unix::net::UnixStream,
     },
-    sync::OnceLock,
 };
+use once_cell::sync::OnceCell;
 
 use crate::{cutils::cerr, log::dev_error};
 
@@ -16,7 +16,7 @@ use super::{
     signal_name, SignalNumber,
 };
 
-static STREAM: OnceLock<SignalStream> = OnceLock::new();
+static STREAM: OnceCell<SignalStream> = OnceCell::new();
 
 pub(super) unsafe fn send_siginfo(
     _signal: SignalNumber,

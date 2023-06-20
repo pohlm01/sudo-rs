@@ -187,7 +187,7 @@ impl ExecClosure {
                         if command_pgrp != self.parent_pgrp
                             && opt_tty
                                 .as_ref()
-                                .is_some_and(|tty| tty.tcsetpgrp_nobg(command_pgrp).is_ok())
+                                .map(|tty| tty.tcsetpgrp_nobg(command_pgrp).is_ok()).unwrap_or(false)
                         {
                             if let Err(err) = killpg(command_pgrp, SIGCONT) {
                                 dev_warn!("cannot send SIGCONT to command ({command_pgrp}): {err}");

@@ -205,7 +205,7 @@ fn exec_command(
     // Wait for the monitor to set us as the foreground group for the pty if we are in the
     // foreground.
     if foreground {
-        while !pty_follower.tcgetpgrp().is_ok_and(|pid| pid == command_pid) {
+        while !pty_follower.tcgetpgrp().map(|pid| pid == command_pid).unwrap_or(false) {
             std::thread::sleep(std::time::Duration::from_micros(1));
         }
     }
