@@ -289,7 +289,7 @@ impl Token for StringParameter {
 #[derive(Clone)]
 #[cfg_attr(test, derive(Debug, PartialEq, Eq))]
 pub enum ChDir {
-    Path(std::path::PathBuf),
+    Path(String),
     Any,
 }
 
@@ -302,7 +302,7 @@ impl Token for ChDir {
         } else if s.contains('*') {
             Err("path cannot contain '*'".to_string())
         } else {
-            Ok(ChDir::Path(s.into()))
+            Ok(ChDir::Path(s))
         }
     }
 

@@ -8,7 +8,6 @@ use crate::system::time::Duration;
 /// The trait definitions can be part of some global crate in the future, if we support more
 /// than just the sudoers file.
 use std::collections::HashSet;
-use std::path::Path;
 
 pub trait Policy {
     fn authorization(&self) -> Authorization {
@@ -41,7 +40,7 @@ pub enum Authorization {
 #[must_use]
 #[cfg_attr(test, derive(Debug, PartialEq))]
 pub enum DirChange<'a> {
-    Strict(Option<&'a Path>),
+    Strict(Option<&'a str>),
     Any,
 }
 
