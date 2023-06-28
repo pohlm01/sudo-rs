@@ -5,7 +5,7 @@ use std::{fmt, path::PathBuf};
 pub enum Error {
     CommandNotFound(PathBuf),
     InvalidCommand(PathBuf),
-    ChDirNotAllowed { chdir: PathBuf, command: PathBuf },
+    ChDirNotAllowed { chdir: String, command: PathBuf },
     UserNotFound(String),
     GroupNotFound(String),
     Authentication(String),
@@ -39,8 +39,7 @@ impl fmt::Display for Error {
             }
             Error::ChDirNotAllowed { chdir, command } => write!(
                 f,
-                "you are not allowed to use '--chdir {}' with '{}'",
-                chdir.display(),
+                "you are not allowed to use '--chdir {chdir}' with '{}'",
                 command.display()
             ),
         }

@@ -1,13 +1,13 @@
 use std::io::{self, ErrorKind};
-use std::path::PathBuf;
+use std::path::Path;
 
 use crate::common::{context::LaunchType, Context};
 use crate::system::{Group, User};
 
 pub trait RunOptions {
-    fn command(&self) -> io::Result<&PathBuf>;
+    fn command(&self) -> io::Result<&Path>;
     fn arguments(&self) -> &Vec<String>;
-    fn chdir(&self) -> Option<&PathBuf>;
+    fn chdir(&self) -> Option<&Path>;
     fn is_login(&self) -> bool;
     fn user(&self) -> &User;
     fn requesting_user(&self) -> &User;
@@ -17,7 +17,7 @@ pub trait RunOptions {
 }
 
 impl RunOptions for Context {
-    fn command(&self) -> io::Result<&PathBuf> {
+    fn command(&self) -> io::Result<&Path> {
         if self.command.resolved {
             Ok(&self.command.command)
         } else {
@@ -29,8 +29,8 @@ impl RunOptions for Context {
         &self.command.arguments
     }
 
-    fn chdir(&self) -> Option<&PathBuf> {
-        self.chdir.as_ref()
+    fn chdir(&self) -> Option<&Path> {
+        self.chdir.as_deref()
     }
 
     fn is_login(&self) -> bool {

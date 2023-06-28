@@ -201,7 +201,7 @@ impl SuContext {
 }
 
 impl RunOptions for SuContext {
-    fn command(&self) -> io::Result<&PathBuf> {
+    fn command(&self) -> io::Result<&Path> {
         Ok(&self.command)
     }
 
@@ -209,7 +209,7 @@ impl RunOptions for SuContext {
         &self.arguments
     }
 
-    fn chdir(&self) -> Option<&std::path::PathBuf> {
+    fn chdir(&self) -> Option<&std::path::Path> {
         None
     }
 

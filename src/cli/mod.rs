@@ -23,8 +23,8 @@ pub enum SudoAction {
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct SudoOptions {
     pub background: bool,
-    pub chroot: Option<PathBuf>,
-    pub directory: Option<PathBuf>,
+    pub chroot: Option<String>,
+    pub directory: Option<String>,
     pub group: Option<String>,
     pub host: Option<String>,
     pub login: bool,
@@ -300,7 +300,7 @@ impl SudoOptions {
                 },
                 SudoArg::Argument(option, value) => match option.as_str() {
                     "-D" | "--chdir" => {
-                        options.directory = Some(PathBuf::from(value));
+                        options.directory = Some(value);
                     }
                     "-E" | "--preserve-env" => {
                         options.preserve_env = value.split(',').map(str::to_string).collect()
@@ -312,7 +312,7 @@ impl SudoOptions {
                         options.host = Some(value);
                     }
                     "-R" | "--chroot" => {
-                        options.chroot = Some(PathBuf::from(value));
+                        options.chroot = Some(value);
                     }
                     "-U" | "--other-user" => {
                         options.other_user = Some(value);

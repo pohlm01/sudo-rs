@@ -1,6 +1,5 @@
 use crate::cli::{SudoAction, SudoOptions};
 use crate::system::{hostname, Group, Process, User};
-use std::path::PathBuf;
 
 use super::{
     command::CommandAndArguments,
@@ -12,7 +11,7 @@ use super::{
 pub struct Context {
     // cli options
     pub launch: LaunchType,
-    pub chdir: Option<PathBuf>,
+    pub chdir: Option<String>,
     pub command: CommandAndArguments,
     pub target_user: User,
     pub target_group: Group,
