@@ -14,9 +14,21 @@ use libc::{
     c_void, cfgetispeed, cfgetospeed, cfmakeraw, cfsetispeed, cfsetospeed, ioctl, sigaction,
     sigemptyset, sighandler_t, siginfo_t, sigset_t, tcflag_t, tcgetattr, tcsetattr, termios,
     winsize, CS7, CS8, ECHO, ECHOCTL, ECHOE, ECHOK, ECHOKE, ECHONL, ICANON, ICRNL, IEXTEN, IGNCR,
-    IGNPAR, IMAXBEL, INLCR, INPCK, ISIG, ISTRIP, IUTF8, IXANY, IXOFF, IXON, NOFLSH, OCRNL, OLCUC,
-    ONLCR, ONLRET, ONOCR, OPOST, PARENB, PARMRK, PARODD, PENDIN, SIGTTOU, TCSADRAIN, TCSAFLUSH,
-    TIOCGWINSZ, TIOCSWINSZ, TOSTOP,
+    IGNPAR, IMAXBEL, INLCR, INPCK, ISIG, ISTRIP, IXANY, IXOFF, IXON, NOFLSH, OCRNL, ONLCR, ONLRET,
+    ONOCR, OPOST, PARENB, PARMRK, PARODD, PENDIN, SIGTTOU, TCSADRAIN, TCSAFLUSH, TIOCGWINSZ,
+    TIOCSWINSZ, TOSTOP,
+};
+
+const IUTF8: libc::tcflag_t = if cfg!(target_os = "linux") {
+    libc::IUTF8
+} else {
+    0
+};
+
+const OLCUC: libc::tcflag_t = if cfg!(target_os = "linux") {
+    libc::OLCUC
+} else {
+    0
 };
 
 use super::Terminal;
@@ -221,6 +233,7 @@ impl UserTerm {
                 unsafe { sa_mask.assume_init() }
             },
             sa_flags: 0,
+            #[cfg(target_os = "linux")]
             sa_restorer: None,
         };
         // Reset `GOT_SIGTTOU`.

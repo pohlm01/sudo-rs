@@ -84,9 +84,22 @@ impl FileCloser {
     }
 }
 
+// #[cfg(target_os = "linux")]
+// fn close_range(min_fd: c_uint, max_fd: c_uint) -> io::Result<()> {
+//     if min_fd <= max_fd {
+//         cerr(unsafe { libc::syscall(libc::SYS_close_range, min_fd, max_fd, 0 as c_uint) })?;
+//     }
+// 
+//     Ok(())
+// }
+// #[cfg(not(target_os = "linux"))]
 fn close_range(min_fd: c_uint, max_fd: c_uint) -> io::Result<()> {
+    extern "C" {
+        fn close_range(min_fd: c_uint, max_fd: c_uint, flags: c_uint) -> c_int;
+    }
+
     if min_fd <= max_fd {
-        cerr(unsafe { libc::syscall(libc::SYS_close_range, min_fd, max_fd, 0 as c_uint) })?;
+        cerr(unsafe { close_range(min_fd, max_fd, 0 as c_uint) })?;
     }
 
     Ok(())
@@ -174,15 +187,17 @@ pub fn set_target_user(
         target_user.groups.push(target_group.gid);
     }
 
+    #[cfg(target_os = "linux")]
+    let ngroups = target_user.groups.len();
+    #[cfg(not(target_os = "linux"))]
+    let ngroups = target_user.groups.len().try_into().unwrap();
+
     // we need to do this in a `pre_exec` call since the `groups` method in `process::Command` is unstable
     // see https://github.com/rust-lang/rust/blob/a01b4cc9f375f1b95fa8195daeea938d3d9c4c34/library/std/src/sys/unix/process/process_unix.rs#L329-L352
     // for the std implementation of the libc calls to `setgroups`, `setgid` and `setuid`
     unsafe {
         cmd.pre_exec(move || {
-            cerr(libc::setgroups(
-                target_user.groups.len(),
-                target_user.groups.as_ptr(),
-            ))?;
+            cerr(libc::setgroups(ngroups, target_user.groups.as_ptr()))?;
             cerr(libc::setgid(target_group.gid))?;
             cerr(libc::setuid(target_user.uid))?;
 

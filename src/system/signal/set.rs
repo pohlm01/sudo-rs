@@ -35,6 +35,7 @@ impl SignalAction {
                 sa_sigaction,
                 sa_mask: sa_mask.raw,
                 sa_flags,
+                #[cfg(target_os = "linux")]
                 sa_restorer: None,
             },
         })
