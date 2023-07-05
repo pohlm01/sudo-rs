@@ -84,15 +84,16 @@ impl FileCloser {
     }
 }
 
-// #[cfg(target_os = "linux")]
-// fn close_range(min_fd: c_uint, max_fd: c_uint) -> io::Result<()> {
-//     if min_fd <= max_fd {
-//         cerr(unsafe { libc::syscall(libc::SYS_close_range, min_fd, max_fd, 0 as c_uint) })?;
-//     }
-// 
-//     Ok(())
-// }
-// #[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "linux")]
+fn close_range(min_fd: c_uint, max_fd: c_uint) -> io::Result<()> {
+    if min_fd <= max_fd {
+        cerr(unsafe { libc::syscall(libc::SYS_close_range, min_fd, max_fd, 0 as c_uint) })?;
+    }
+
+    Ok(())
+}
+
+#[cfg(not(target_os = "linux"))]
 fn close_range(min_fd: c_uint, max_fd: c_uint) -> io::Result<()> {
     extern "C" {
         fn close_range(min_fd: c_uint, max_fd: c_uint, flags: c_uint) -> c_int;

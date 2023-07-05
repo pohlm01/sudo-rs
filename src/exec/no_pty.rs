@@ -302,7 +302,7 @@ impl Process for ExecClosure {
 }
 
 impl HandleSigchld for ExecClosure {
-    const OPTIONS: WaitOptions = WaitOptions::new().all().untraced().no_hang();
+    const OPTIONS: WaitOptions = WaitOptions::new().untraced().no_hang();
 
     fn on_exit(&mut self, exit_code: c_int, registry: &mut EventRegistry<Self>) {
         registry.set_exit(ExitReason::Code(exit_code));

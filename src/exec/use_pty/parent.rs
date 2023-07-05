@@ -674,7 +674,7 @@ impl Process for ParentClosure {
 }
 
 impl HandleSigchld for ParentClosure {
-    const OPTIONS: WaitOptions = WaitOptions::new().all().untraced().no_hang();
+    const OPTIONS: WaitOptions = WaitOptions::new().untraced().no_hang();
 
     fn on_exit(&mut self, _exit_code: c_int, _registry: &mut EventRegistry<Self>) {
         self.monitor_pid = None;

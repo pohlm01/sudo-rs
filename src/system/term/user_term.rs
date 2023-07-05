@@ -19,20 +19,15 @@ use libc::{
     TIOCSWINSZ, TOSTOP,
 };
 
-const IUTF8: libc::tcflag_t = if cfg!(target_os = "linux") {
-    libc::IUTF8
-} else {
-    0
-};
-
-const OLCUC: libc::tcflag_t = if cfg!(target_os = "linux") {
-    libc::OLCUC
-} else {
-    0
-};
-
 use super::Terminal;
 use crate::{cutils::cerr, system::interface::ProcessId};
+
+#[cfg(target_os = "linux")]
+use libc::{IUTF8, OLCUC};
+#[cfg(not(target_os = "linux"))]
+const IUTF8: libc::tcflag_t = 0;
+#[cfg(not(target_os = "linux"))]
+const OLCUC: libc::tcflag_t = 0;
 
 const INPUT_FLAGS: tcflag_t = IGNPAR
     | PARMRK
@@ -86,6 +81,7 @@ fn tcsetattr_nobg(fd: c_int, flags: c_int, tp: *const termios) -> io::Result<()>
             unsafe { sa_mask.assume_init() }
         },
         sa_flags: 0,
+        #[cfg(target_os = "linux")]
         sa_restorer: None,
     };
     // Reset `GOT_SIGTTOU`.

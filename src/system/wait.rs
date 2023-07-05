@@ -2,8 +2,13 @@ use std::io;
 
 use libc::{
     c_int, WCONTINUED, WEXITSTATUS, WIFCONTINUED, WIFEXITED, WIFSIGNALED, WIFSTOPPED, WNOHANG,
-    WSTOPSIG, WTERMSIG, WUNTRACED, __WALL,
+    WSTOPSIG, WTERMSIG, WUNTRACED,
 };
+
+#[cfg(target_os = "linux")]
+use libc::__WALL;
+#[cfg(not(target_os = "linux"))]
+const __WALL: c_int = 0;
 
 use crate::cutils::cerr;
 use crate::system::signal::signal_name;
