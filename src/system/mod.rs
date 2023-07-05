@@ -113,8 +113,8 @@ pub(crate) enum ForkResult {
     Child,
 }
 
-unsafe fn inner_fork() -> io::Result<ForkResult> {
-    let pid = cerr(unsafe { libc::fork() })?;
+unsafe fn inner_fork(fork_fn: unsafe extern "C" fn() -> ProcessId) -> io::Result<ForkResult> {
+    let pid = cerr(unsafe { fork_fn() })?;
     if pid == 0 {
         Ok(ForkResult::Child)
     } else {
@@ -127,10 +127,21 @@ unsafe fn inner_fork() -> io::Result<ForkResult> {
 pub(crate) fn fork() -> io::Result<ForkResult> {
     // SAFETY: `fork` is implemented using `clone` in linux so we don't need to worry about signal
     // safety.
-    unsafe { inner_fork() }
+    unsafe { inner_fork(libc::fork) }
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "freebsd")]
+/// Create a new process.
+pub(crate) fn fork() -> io::Result<ForkResult> {
+    extern "C" {
+        fn _Fork() -> ProcessId;
+    }
+    // SAFETY: `_Fork` is async-signal-safe so it can be called inside itself. We don't create any
+    // extra threads in any process so we should be fine here.
+    unsafe { inner_fork(_Fork) }
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "freebsd")))]
 /// Create a new process.
 ///
 /// # Safety
@@ -138,7 +149,7 @@ pub(crate) fn fork() -> io::Result<ForkResult> {
 /// In a multithreaded program, only async-signal-safe functions are guaranteed to work in the
 /// child process until a call to `execve` or a similar function is done.
 pub(crate) unsafe fn fork() -> io::Result<ForkResult> {
-    inner_fork()
+    inner_fork(libc::fork)
 }
 
 pub fn setsid() -> io::Result<ProcessId> {
